@@ -7,7 +7,7 @@ def add_log(msg):
     print(f"[{timestamp}] {msg}")
     log.append(f"[{timestamp}] {msg}")
 
-add_log("🚀 봇 시동 켜짐 (진단 모드)")
+add_log("🚀 봇 시동 켜짐 (진단 모드 v2)")
 
 # 1. 라이브러리 검사
 try:
@@ -59,7 +59,7 @@ try:
 except Exception as e:
     add_log(f"❌ 콘텐츠 생성 중 치명적 에러: {e}")
 
-# 4. Dev.to 업로드 시도
+# 4. Dev.to 업로드 시도 (여기가 문제였음 - 수정완료)
 if secrets["DEVTO_TOKEN"]:
     add_log("🚀 Dev.to 업로드 시도...")
     try:
@@ -76,6 +76,8 @@ if secrets["DEVTO_TOKEN"]:
                            json=data, timeout=10)
         if resp.status_code == 201: add_log(f"✅ Dev.to 업로드 성공: {resp.json()['url']}")
         else: add_log(f"❌ Dev.to 실패 (코드 {resp.status_code}): {resp.text}")
+    except Exception as e:
+        add_log(f"❌ Dev.to 업로드 에러: {e}")
 else:
     add_log("⚠️ DEVTO_TOKEN 없음: 업로드 건너뜀")
 
