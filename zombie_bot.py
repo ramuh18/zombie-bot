@@ -9,6 +9,7 @@ def get_env(key):
     if not val or "***" in val: return ""
     return val.strip()
 
+# [설정]
 AMAZON_TAG = "empireanalyst-20"
 BYBIT_LINK = "https://www.bybit.com/invite?ref=DOVWK5A"
 BLOG_BASE_URL = "https://ramuh18.github.io/zombie-bot/"
@@ -21,137 +22,178 @@ X_API_SECRET = get_env("X_API_SECRET")
 X_ACCESS_TOKEN = get_env("X_ACCESS_TOKEN")
 X_ACCESS_TOKEN_SECRET = get_env("X_ACCESS_TOKEN_SECRET")
 
-# [1. 뉴스 엔진]
+# [1. 뉴스 주제 가져오기]
 def get_hot_topic():
+    topics = [
+        "Bitcoin Institutional Adoption 2026",
+        "Gold vs. US Dollar Outlook",
+        "AI Tech Sector Valuation Risks",
+        "Global Supply Chain & Inflation",
+        "Ethereum ETF Market Impact"
+    ]
     try:
-        # 매번 조금씩 다른 주제를 가져오도록 유도
-        topics = ["Global Market Volatility", "Crypto vs Gold 2026", "AI Tech Bubble Risks", "Fed Interest Rate Strategy"]
-        return random.choice(topics)
-    except: 
-        return "Global Market Outlook"
-
-# [2. 콘텐츠 엔진: AI가 실수하면 바로 수동 모드 발동]
-def generate_content(topic):
-    log(f"🧠 '{topic}' 기사 작성 시도...")
-    
-    # 1. Gemini 시도 (가장 안전)
-    if GEMINI_API_KEY:
-        try:
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
-            prompt = f"Write a professional financial report about {topic}. Markdown only. No JSON."
-            resp = requests.post(url, json={"contents": [{"parts": [{"text": prompt}]}]}, timeout=30)
-            if resp.status_code == 200:
-                text = resp.json()['candidates'][0]['content']['parts'][0]['text']
-                if "{" not in text and "reasoning_content" not in text:
-                    return text # 깨끗하면 반환
-        except: pass
-
-    # 2. 무료 AI 시도
-    try:
-        prompt = f"Write a financial news article about {topic}. Do not output JSON code."
-        url = f"https://text.pollinations.ai/{urllib.parse.quote(prompt)}"
-        resp = requests.get(url, timeout=60)
-        text = resp.text.strip()
-
-        # ★ [핵심] 외계어 감지 시 즉시 'None' 반환 -> 수동 모드로 직행
-        # 사용자님이 보여주신 'role', 'reasoning_content', '{' 등이 보이면 가차 없이 버림
-        if "reasoning_content" in text or '{"role":' in text or text.startswith("{"):
-            log("🚨 외계어(JSON) 감지! -> 수동 모드로 전환합니다.")
-            return None 
-            
-        return text
+        feed = feedparser.parse("https://news.google.com/rss/topics/CAAqJggBCiCPASowCAcLCzIxY2J1c2luZXNzX2VkaXRpb25fZW5fdXMvYnVzaW5lc3NfZWRpdGlvbl9lbl91cw?hl=en-US&gl=US&ceid=US:en")
+        if feed.entries: return feed.entries[0].title
     except: pass
-    
-    return None # 실패 시 None
+    return random.choice(topics)
 
-# [3. 수동 모드 원고 (절대 안 깨지는 HTML)]
-def get_backup_html(topic):
+# [2. 글 세척기 (AI가 뱉은 껍질 벗기기)]
+def clean_content(text):
+    text = text.strip()
+    # JSON 파싱 시도
+    if text.startswith("{") or "reasoning_content" in text:
+        try:
+            data = json.loads(text)
+            if 'content' in data: return data['content']
+            if 'choices' in data: return data['choices'][0]['message']['content']
+        except:
+            # 파싱 실패하면 정규식으로 'content' 내부만 추출
+            match = re.search(r'"content":\s*"(.*?)"', text, re.DOTALL)
+            if match: return match.group(1).replace('\\n', '\n').replace('\\"', '"')
+            
+    # 마크다운 제목(#) 앞의 잡설 제거
+    if '#' in text:
+        text = text[text.find('#'):]
+        
+    return text
+
+# [3. 글쓰기 엔진 (재시도 기능 탑재)]
+def generate_article_body(topic):
+    log(f"🧠 주제: {topic}")
+    prompt = f"""
+    Act as a Senior Financial Analyst. Write a structured blog post about '{topic}'.
+    - Structure: Introduction, Key Drivers, Market Outlook, Conclusion.
+    - Style: Professional, Insightful, Concise.
+    - Format: Pure Markdown only. Use ## for headings.
+    - NO JSON. NO conversational filler.
+    """
+    
+    # 최대 3번 시도 (글 망치면 다시 시킴)
+    for attempt in range(3):
+        try:
+            log(f"✍️ 글쓰기 시도 {attempt+1}/3...")
+            
+            # 1순위: Gemini
+            if GEMINI_API_KEY:
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+                resp = requests.post(url, json={"contents": [{"parts": [{"text": prompt}]}]}, timeout=30)
+                if resp.status_code == 200:
+                    text = resp.json()['candidates'][0]['content']['parts'][0]['text']
+                    clean = clean_content(text)
+                    if len(clean) > 200: return clean # 성공!
+
+            # 2순위: 무료 AI
+            url = f"https://text.pollinations.ai/{urllib.parse.quote(prompt)}"
+            resp = requests.get(url, timeout=60)
+            clean = clean_content(resp.text)
+            
+            # 검증: 외계어(JSON)나 너무 짧은 글은 실패 처리
+            if "reasoning_content" in clean or len(clean) < 200:
+                log("⚠️ 글 품질 미달. 재시도합니다.")
+                continue # 다음 시도로
+                
+            return clean # 성공!
+            
+        except Exception as e:
+            log(f"❌ 에러 발생: {e}")
+            time.sleep(2)
+
+    # 3번 다 실패했을 때만 나가는 최후의 원고
+    log("🚨 모든 AI 시도 실패. 비상 원고 사용.")
     return f"""
-    <div style="padding: 20px; background-color: #fff3cd; color: #856404; border-radius: 8px; margin-bottom: 30px;">
-        <strong>⚠️ Analyst Note:</strong> Automated feed is calibrating. Displaying manual executive summary.
-    </div>
-
-    <h3>1. Market Overview: {topic}</h3>
-    <p>The financial markets are currently navigating a period of heightened volatility. Institutional capital is rotating from high-growth tech stocks into defensive assets such as <strong>Gold</strong> and <strong>Government Bonds</strong>.</p>
+    ## Market Update: {topic}
     
-    <h3>2. Key Drivers</h3>
-    <ul>
-        <li><strong>Institutional Volume:</strong> Significant accumulation is observed in safe-haven assets.</li>
-        <li><strong>Technical Levels:</strong> Major indices are testing critical support zones.</li>
-        <li><strong>Macro Sentiment:</strong> Inflation concerns are resurfacing, prompting a "risk-off" approach from hedge funds.</li>
-    </ul>
-
-    <h3>3. Strategic Outlook</h3>
-    <p>"In the current environment, cash preservation and selective entry into commodities offer the best risk-adjusted returns," notes the <strong>Empire Analyst</strong> strategy team.</p>
+    **Executive Summary**
+    The market is showing increased volatility surrounding {topic}. Institutional investors are repositioning portfolios to manage risk.
+    
+    **Key Insights**
+    * **Trend Analysis:** Current price action suggests a consolidation phase.
+    * **Risk Factors:** Macroeconomic indicators remain mixed.
+    
+    **Outlook**
+    We recommend a cautious approach, focusing on high-quality assets like Gold and Bitcoin.
     """
 
-# [4. 메인 실행]
+# [4. 메인 실행 (건축가 역할)]
 def main():
-    log("🏁 Zombie Bot (Fail-Safe Ver) 가동")
+    log("🏁 Empire Analyst (Perfect Layout) 가동")
     topic = get_hot_topic()
     
-    # AI 기사 생성 시도
-    raw_md = generate_content(topic)
+    # 1. AI에게 글만 받아옴 (디자인 X)
+    raw_md = generate_article_body(topic)
+    html_content = markdown.markdown(raw_md)
     
-    # AI가 성공했으면 마크다운 변환, 실패했으면 수동 HTML 사용
-    if raw_md:
-        log("✅ AI 기사 생성 성공")
-        html_body = markdown.markdown(raw_md)
-    else:
-        log("🛡️ AI 실패/외계어 감지 -> 수동 원고 투입")
-        html_body = get_backup_html(topic)
-
+    # 2. 파이썬이 디자인을 입힘 (여기서 바이비트 강제 삽입)
+    img_url = f"https://image.pollinations.ai/prompt/{urllib.parse.quote(topic + ' chart 8k')}"
     current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S UTC")
-    keyword = "Finance"
+    
+    # ★ 바이비트/아마존 섹션 (파이썬이 직접 그림)
+    ads_section = f"""
+    <div style="margin-top: 40px; padding: 30px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 12px; text-align: center;">
+        <h3 style="margin-top: 0; color: #2d3436;">💰 Exclusive Trader Offers</h3>
+        <p style="color: #636e72; margin-bottom: 20px;">Maximize your portfolio with our partners.</p>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+            <a href="{BYBIT_LINK}" target="_blank" style="display: block; padding: 16px; background: #121212; color: #f7a600; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 1.1em;">
+                🎁 Claim $30,000 Bybit Bonus
+            </a>
+            <a href="https://www.amazon.com/s?k=ledger+nano&tag={AMAZON_TAG}" target="_blank" style="display: block; padding: 16px; background: #ff9900; color: white; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 1.1em;">
+                🛡️ Secure Crypto with Ledger (Amazon)
+            </a>
+        </div>
+    </div>
+    """
 
-    try:
-        img_url = f"https://image.pollinations.ai/prompt/{urllib.parse.quote(topic + ' chart 8k')}"
-        amz_link = f"https://www.amazon.com/s?k=gold&tag={AMAZON_TAG}"
-        
-        full_html = f"""
-        <!DOCTYPE html>
-        <html><head><title>Empire Analyst</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1">
+    full_html = f"""
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>{topic}</title>
         <style>
-            body {{ font-family: 'Helvetica', sans-serif; max-width: 800px; margin: auto; padding: 40px 20px; line-height: 1.8; color: #333; }}
-            img {{ width: 100%; border-radius: 12px; margin: 30px 0; }}
-            h1 {{ font-size: 2.2em; border-bottom: 2px solid #eee; padding-bottom: 15px; letter-spacing: -1px; }}
-            .time-tag {{ background: #000; color: #fff; padding: 5px 10px; border-radius: 4px; font-size: 0.8em; font-weight: bold; }}
-            .footer-card {{ background: #111; color: white; padding: 60px 20px; border-radius: 20px; text-align: center; margin-top: 80px; }}
-            .btn {{ background: #fff; color: #000; padding: 12px 25px; text-decoration: none; border-radius: 30px; font-weight: bold; }}
-        </style></head>
-        <body>
-            <span class="time-tag">UPDATED: {current_time}</span>
-            <h1 style="margin-top:20px;">{topic}</h1>
-            <img src="{img_url}">
-            
-            {html_body}
-            
-            <div style="background:#f9f9f9; padding:25px; text-align:center; border-radius:12px; margin-top:40px; border:1px solid #eee;">
-                 <h3 style="margin-top:0;">🛡️ Empire Selection</h3>
-                 <p>Hedge against market risks.</p>
-                 <a href="{amz_link}" style="background:#ff9900; color:white; padding:10px 20px; text-decoration:none; border-radius:5px; font-weight:bold;">Check Gold Prices</a>
-            </div>
+            body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 20px; }}
+            img {{ width: 100%; height: auto; border-radius: 12px; margin: 20px 0; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }}
+            h1 {{ font-size: 2.5rem; margin-bottom: 10px; border-bottom: 2px solid #f1f1f1; padding-bottom: 15px; }}
+            h2 {{ color: #2c3e50; margin-top: 30px; }}
+            .badge {{ display: inline-block; background: #e74c3c; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; margin-bottom: 10px; }}
+            .footer {{ margin-top: 60px; padding-top: 20px; border-top: 1px solid #eee; text-align: center; color: #888; font-size: 0.9rem; }}
+            a {{ color: #0070f3; text-decoration: none; }}
+            a:hover {{ text-decoration: underline; }}
+        </style>
+    </head>
+    <body>
+        <span class="badge">LIVE UPDATE: {current_time}</span>
+        <h1>{topic}</h1>
+        <img src="{img_url}" alt="Market Chart">
+        
+        <div class="content">
+            {html_content}
+        </div>
+        
+        {ads_section}
+        
+        <div class="footer">
+            <p>Analysis provided by <strong>Empire Analyst Systems</strong></p>
+            <p><a href="{EMPIRE_URL}">Visit Official Headquarters →</a></p>
+        </div>
+    </body>
+    </html>
+    """
 
-            <div class="footer-card">
-                <h2>Empire Analyst</h2>
-                <p style="color:#888;">Automated Financial Intelligence</p>
-                <a href="{EMPIRE_URL}" class="btn">VISIT HEADQUARTERS →</a>
-            </div>
-        </body></html>
-        """
+    # 저장
+    try:
         with open("index.html", "w", encoding="utf-8") as f: f.write(full_html)
         log("✅ index.html 저장 완료")
     except Exception as e: log(f"❌ 저장 실패: {e}")
 
-    # 업로드 (에러 무시)
+    # 배포 (Dev.to / X)
     if DEVTO_TOKEN:
-        try: requests.post("https://dev.to/api/articles", headers={"api-key": DEVTO_TOKEN}, json={"article": {"title": topic, "published": True, "body_markdown": raw_md if raw_md else "Market Update", "canonical_url": BLOG_BASE_URL}}, timeout=10)
+        try: requests.post("https://dev.to/api/articles", headers={"api-key": DEVTO_TOKEN}, json={"article": {"title": topic, "published": True, "body_markdown": raw_md, "canonical_url": BLOG_BASE_URL}}, timeout=10)
         except: pass
     if X_API_KEY:
         try:
             client = tweepy.Client(X_API_KEY, X_API_SECRET, X_ACCESS_TOKEN, X_ACCESS_TOKEN_SECRET)
-            client.create_tweet(text=f"⚡ {topic}\n\nUpdate ({current_time}): {BLOG_BASE_URL}")
+            client.create_tweet(text=f"⚡ Market Alert: {topic}\n\nFull Report: {BLOG_BASE_URL}")
         except: pass
 
 if __name__ == "__main__":
