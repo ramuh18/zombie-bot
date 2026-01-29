@@ -14,10 +14,9 @@ DEVTO_TOKEN = get_env("DEVTO_TOKEN")
 
 # [사이트 설정]
 BLOG_TITLE = "Global Market Watch"
-# ★ 사용자님 깃허브 주소 (마지막 슬래시 필수)
 BLOG_BASE_URL = "https://ramuh18.github.io/zombie-bot/"
 
-# [광고 설정]
+# [광고 & 제휴 설정]
 EMPIRE_URL = "https://empire-analyst.digital/"
 AFFILIATE_LINK = "https://www.bybit.com/invite?ref=DOVWK5A" 
 AMAZON_TAG = "empireanalyst-20"
@@ -89,26 +88,21 @@ def get_sidebar_recent_posts(history, current_title):
     return html
 
 # ==========================================
-# [4. ★사이트맵 자동 생성기 (신규 기능)]
+# [4. 사이트맵 자동 생성]
 # ==========================================
 def generate_sitemap(history):
     sitemap_xml = '<?xml version="1.0" encoding="UTF-8"?>\n'
     sitemap_xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
-    
-    # 메인 페이지
     sitemap_xml += f'  <url><loc>{BLOG_BASE_URL}</loc><changefreq>daily</changefreq><priority>1.0</priority></url>\n'
-    
-    # 게시글들
-    for h in history[:50]: # 최근 50개만
+    for h in history[:50]:
         url = f"{BLOG_BASE_URL}{h['file']}"
         date = h['date']
         sitemap_xml += f'  <url><loc>{url}</loc><lastmod>{date}</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>\n'
-        
     sitemap_xml += '</urlset>'
     
     with open("sitemap.xml", "w", encoding="utf-8") as f:
         f.write(sitemap_xml)
-    log("🗺️ 사이트맵(sitemap.xml) 생성 완료")
+    log("🗺️ 사이트맵 생성 완료")
 
 # ==========================================
 # [5. 본문 생성]
@@ -128,32 +122,27 @@ def generate_part(topic, focus):
     return "Content generating..."
 
 # ==========================================
-# [6. HTML 템플릿 (SEO & 소셜 메타태그 추가)]
+# [6. HTML 템플릿 (인증 태그 포함)]
 # ==========================================
 def create_professional_html(topic, img_url, body_html, sidebar_html, canonical_url):
-    # 나중에 구글 애널리틱스 ID를 받으면 'G-XXXXXXXXXX' 부분을 교체하세요.
-    ga_script = """
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-XXXXXXXXXX');
-    </script>
-    """
+    
+    # ★ 사용자님의 구글 인증 태그가 여기 들어갔습니다!
+    google_verification = '<meta name="google-site-verification" content="Jxh9S9J3S5_RBIpJH4CVrDkpRiDZ_mQ99TfIm7xK7YY" />'
     
     return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    {google_verification}
+    
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="In-depth financial analysis on {topic}. Institutional grade crypto and market insights.">
+    <meta name="description" content="Financial analysis on {topic}. Institutional market insights.">
     <title>{topic} - {BLOG_TITLE}</title>
     <link rel="canonical" href="{canonical_url}" />
     
     <meta property="og:type" content="article" />
     <meta property="og:title" content="{topic}" />
-    <meta property="og:description" content="Click to read full financial analysis and market outlook." />
+    <meta property="og:description" content="Read full financial analysis." />
     <meta property="og:image" content="{img_url}" />
     <meta property="og:url" content="{canonical_url}" />
     <meta name="twitter:card" content="summary_large_image" />
@@ -182,7 +171,7 @@ def create_professional_html(topic, img_url, body_html, sidebar_html, canonical_
         .recent-posts li {{ margin-bottom: 12px; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px; }}
         footer {{ background: #0f172a; color: #94a3b8; text-align: center; padding: 40px 0; margin-top: 60px; font-size: 0.8rem; }}
     </style>
-    </head>
+</head>
 <body>
 <header><div class="header-wrap"><div class="brand">{BLOG_TITLE}</div></div></header>
 <div class="container">
@@ -199,7 +188,7 @@ def create_professional_html(topic, img_url, body_html, sidebar_html, canonical_
             <h3 style="font-family:'Roboto',sans-serif;font-size:0.9rem;text-transform:uppercase;color:#64748b;border-bottom:1px solid #cbd5e1;padding-bottom:8px;margin-bottom:15px;">👑 Official Headquarters</h3>
             <a href="{EMPIRE_URL}" class="ad-box ad-main">
                 <span class="ad-title">Empire Analyst HQ</span>
-                <span class="ad-desc">Deep Dive Analysis & Premium Reports →</span>
+                <span class="ad-desc">Premium Reports & Analysis →</span>
             </a>
         </div>
         <div class="widget">
@@ -213,7 +202,7 @@ def create_professional_html(topic, img_url, body_html, sidebar_html, canonical_
             <h3 style="font-family:'Roboto',sans-serif;font-size:0.9rem;text-transform:uppercase;color:#64748b;border-bottom:1px solid #cbd5e1;padding-bottom:8px;margin-bottom:15px;">🛡️ Secure Assets</h3>
             <a href="{AMAZON_LINK}" class="ad-box ad-amazon">
                 <span class="ad-title">📦 Hardware Wallets</span>
-                <span class="ad-desc">Buy Ledger/Trezor on Amazon</span>
+                <span class="ad-desc">Buy Ledger/Trezor Safely</span>
             </a>
         </div>
         <div class="widget">
@@ -230,7 +219,7 @@ def create_professional_html(topic, img_url, body_html, sidebar_html, canonical_
 # [7. 메인 실행]
 # ==========================================
 def main():
-    log("🏁 봇 가동 (SEO Enhanced)")
+    log("🏁 봇 가동 (Verification Added)")
     topic = get_hot_topic()
     log(f"🔥 주제: {topic}")
     
@@ -252,14 +241,13 @@ def main():
     history.insert(0, new_entry)
     with open(HISTORY_FILE, "w") as f: json.dump(history, f, indent=4)
     
-    # ★ 사이트맵 생성 실행
     generate_sitemap(history)
     
     full_html = create_professional_html(topic, img_url, html_body, sidebar_html, full_url)
     
     with open("index.html", "w", encoding="utf-8") as f: f.write(full_html)
     with open(archive_filename, "w", encoding="utf-8") as f: f.write(full_html)
-    log("✅ 블로그 생성 및 사이트맵 갱신 완료")
+    log("✅ 생성 완료")
 
     if DEVTO_TOKEN:
         try:
