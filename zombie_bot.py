@@ -1,5 +1,10 @@
 import os, json, random, requests, markdown, urllib.parse, feedparser, time, re
+import sys, io
 from datetime import datetime
+
+# [핵심] 인코딩 & 특수문자 깨짐 방지
+sys.stdout = io.TextIOWrapper(sys.stdout.detach(), encoding='utf-8')
+sys.stderr = io.TextIOWrapper(sys.stderr.detach(), encoding='utf-8')
 
 def log(msg): print(f"[{datetime.now().strftime('%H:%M:%S')}] {msg}")
 
@@ -12,14 +17,12 @@ def get_env(key):
 GEMINI_API_KEY = get_env("GEMINI_API_KEY")
 DEVTO_TOKEN = get_env("DEVTO_TOKEN")
 
-# [★브랜드 설정: Capital Insight]
+# [브랜드 설정]
 BLOG_TITLE = "Capital Insight"
 BLOG_DESC = "Global Financial Intelligence & Market Analysis"
-
-# [★주소 변경 완료]
 BLOG_BASE_URL = "https://ramuh18.github.io/capital-insight/"
 
-# [수익화 & 광고 설정]
+# [수익화 설정]
 EMPIRE_URL = "https://empire-analyst.digital/"
 AFFILIATE_LINK = "https://www.bybit.com/invite?ref=DOVWK5A" 
 AMAZON_TAG = "empireanalyst-20"
@@ -42,12 +45,13 @@ def clean_title_aggressive(text):
 def get_hot_topic():
     try:
         feed = feedparser.parse("https://news.google.com/rss/topics/CAAqJggBCiCPASowCAcLCzIxY2J1c2luZXNzX2VkaXRpb25fZW5fdXMvYnVzaW5lc3NfZWRpdGlvbl9lbl91cw?hl=en-US&gl=US&ceid=US:en")
-        raw_news = random.choice(feed.entries[:5]).title if feed.entries else "Bitcoin Analysis"
-    except: raw_news = "Crypto Market Update"
+        raw_news = random.choice(feed.entries[:5]).title if feed.entries else "Global Market Outlook"
+    except: raw_news = "Bitcoin & Crypto Trends"
 
-    prompt = f"Rewrite '{raw_news}' into a high-end financial report title (MAX 9 WORDS). Professional, trustworthy tone like Bloomberg."
+    # ★ 프롬프트 강화: 잡담 금지
+    prompt = f"Rewrite '{raw_news}' into a high-end financial report title (MAX 9 WORDS). Professional tone. English Only. Do NOT add any explanation."
     
-    title = "Market Update"
+    title = "Market Intelligence Report"
     for _ in range(2):
         try:
             if GEMINI_API_KEY:
@@ -64,19 +68,20 @@ def get_hot_topic():
     return clean_title_aggressive(title)
 
 # ==========================================
-# [3. 히스토리 & 사이트맵 & 아카이브]
+# [3. 히스토리 & 사이트맵]
 # ==========================================
 def load_and_sync_history():
     history = []
     if os.path.exists(HISTORY_FILE):
         try:
-            with open(HISTORY_FILE, "r") as f:
+            with open(HISTORY_FILE, "r", encoding="utf-8") as f:
                 history = json.load(f)
         except: pass
     if not history:
         try:
             resp = requests.get(f"{BLOG_BASE_URL}{HISTORY_FILE}", timeout=5)
-            if resp.status_code == 200: history = resp.json()
+            if resp.status_code == 200: 
+                history = resp.json()
         except: pass
     return history
 
@@ -101,7 +106,7 @@ def generate_archive_page(history):
             <a href="{full_url}" style="font-size:1.1rem; font-weight:bold; text-decoration:none; color:#333;">{h['title']}</a>
         </div>
         """
-    archive_html = f"""<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Reports Archive - {BLOG_TITLE}</title><style>body{{font-family:'Merriweather',serif;line-height:1.6;max-width:800px;margin:0 auto;padding:20px;color:#333;}}h1{{border-bottom:4px solid #0f172a;padding-bottom:10px;}}a:hover{{color:#b91c1c;}}.btn{{display:inline-block;margin-top:20px;background:#0f172a;color:#fff;padding:10px 20px;text-decoration:none;border-radius:4px;}}</style></head><body><h1>📂 Capital Insight Reports</h1>{list_html}<a href="index.html" class="btn">← Back to Dashboard</a></body></html>"""
+    archive_html = f"""<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Reports Archive - {BLOG_TITLE}</title><link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@300;700&display=swap" rel="stylesheet"><style>body{{font-family:'Merriweather', serif;line-height:1.6;max-width:800px;margin:0 auto;padding:20px;color:#333;}}h1{{border-bottom:4px solid #0f172a;padding-bottom:10px;}}a:hover{{color:#b91c1c;}}.btn{{display:inline-block;margin-top:20px;background:#0f172a;color:#fff;padding:10px 20px;text-decoration:none;border-radius:4px;}}</style></head><body><h1>📂 Capital Insight Reports</h1>{list_html}<a href="index.html" class="btn">← Back to Dashboard</a></body></html>"""
     with open("archive.html", "w", encoding="utf-8") as f: f.write(archive_html)
 
 def get_sidebar_recent_posts(history, current_title):
@@ -121,7 +126,10 @@ def get_sidebar_recent_posts(history, current_title):
 # [4. 본문 생성]
 # ==========================================
 def generate_part(topic, focus):
-    prompt = f"Write a professional financial analysis section on '{topic}'. Focus: {focus}. Length: 350 words. Use Markdown. Tone: Institutional, Analytical, Trustworthy."
+    # ★ [핵심] 프롬프트 수정: 잡담 금지 명령 추가
+    # "Do NOT include internal monologue, drafting notes, or word counts."
+    prompt = f"Write a professional financial analysis section on '{topic}'. Focus: {focus}. Length: 350 words. Use Markdown. Tone: Institutional. Language: English Only. STRICTLY output ONLY the final article text. Do NOT include internal monologue, planning, drafting notes, or word counts. Start directly with the content."
+    
     for _ in range(2):
         try:
             if GEMINI_API_KEY:
@@ -132,7 +140,7 @@ def generate_part(topic, focus):
             resp = requests.get(url, timeout=45)
             return resp.text
         except: time.sleep(1)
-    return "Market data analysis pending..."
+    return "Generating market analysis..."
 
 # ==========================================
 # [5. HTML 템플릿]
@@ -145,9 +153,10 @@ def create_professional_html(topic, img_url, body_html, sidebar_html, canonical_
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     {google_verification}
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Capital Insight: Daily financial briefing on {topic}. Global market intelligence and crypto analysis.">
+    <meta name="description" content="Capital Insight: Daily financial briefing on {topic}.">
     <title>{topic} | {BLOG_TITLE}</title>
     <link rel="canonical" href="{canonical_url}" />
     
@@ -159,6 +168,7 @@ def create_professional_html(topic, img_url, body_html, sidebar_html, canonical_
     <meta name="twitter:card" content="summary_large_image" />
 
     <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@300;700;900&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    
     <style>
         :root {{ --primary: #0f172a; --accent: #b91c1c; --bg: #ffffff; --text: #334155; --sidebar: #f8fafc; }}
         body {{ font-family: 'Merriweather', serif; line-height: 1.8; color: var(--text); background: var(--bg); margin: 0; }}
@@ -209,7 +219,7 @@ def create_professional_html(topic, img_url, body_html, sidebar_html, canonical_
         <article>
             <div class="meta-info">Global Markets • Intelligence • {current_date}</div>
             <h1>{topic}</h1>
-            <img src="{img_url}" class="featured-img" alt="{topic} Visualization">
+            <img src="{img_url}" class="featured-img" alt="{topic} Chart">
             {body_html}
             <div style="margin-top:40px; padding:20px; background:#f1f5f9; border-left:4px solid var(--primary); font-size:0.9rem;">
                 <strong>💡 Analyst Note:</strong> This report provides market intelligence for informational purposes.
@@ -222,21 +232,21 @@ def create_professional_html(topic, img_url, body_html, sidebar_html, canonical_
             <h3>👑 Official Headquarters</h3>
             <a href="{EMPIRE_URL}" class="ad-box ad-main">
                 <span class="ad-title">Empire Analyst HQ</span>
-                <span class="ad-desc">Institutional Grade Analysis & Premium Reports →</span>
+                <span class="ad-desc">Institutional Grade Analysis →</span>
             </a>
         </div>
         <div class="widget">
             <h3>🚀 Limited Bonus</h3>
             <a href="{AFFILIATE_LINK}" class="ad-box ad-affiliate">
                 <span class="ad-title">💰 $30,000 Reward</span>
-                <span class="ad-desc">Exclusive Welcome Bonus for New Traders</span>
+                <span class="ad-desc">Exclusive Welcome Bonus</span>
             </a>
         </div>
         <div class="widget">
             <h3>🛡️ Asset Security</h3>
             <a href="{AMAZON_LINK}" class="ad-box ad-amazon">
                 <span class="ad-title">📦 Hardware Wallets</span>
-                <span class="ad-desc">Official Ledger Store on Amazon (Secure Buy)</span>
+                <span class="ad-desc">Official Ledger Store</span>
             </a>
         </div>
         <div class="widget">
@@ -249,8 +259,7 @@ def create_professional_html(topic, img_url, body_html, sidebar_html, canonical_
     <div>&copy; 2026 {BLOG_TITLE}. All rights reserved.</div>
     <div class="disclaimer">
         <strong>Affiliate & Amazon Disclaimer:</strong><br>
-        {BLOG_TITLE} is a participant in the Amazon Services LLC Associates Program, an affiliate advertising program designed to provide a means for sites to earn advertising fees by advertising and linking to Amazon.com. As an Amazon Associate I earn from qualifying purchases.
-        <br>Some links on this page may be affiliate links.
+        {BLOG_TITLE} is a participant in the Amazon Services LLC Associates Program. As an Amazon Associate I earn from qualifying purchases.
     </div>
     <br><a href="{EMPIRE_URL}" style="color:#94a3b8; text-decoration:underline;">Visit Official Website</a>
 </footer>
@@ -258,7 +267,7 @@ def create_professional_html(topic, img_url, body_html, sidebar_html, canonical_
 </html>"""
 
 # ==========================================
-# [6. 메인 실행 (랜덤 이미지 스타일 적용)]
+# [6. 메인 실행]
 # ==========================================
 def main():
     log("🏁 Capital Insight Bot Started")
@@ -272,9 +281,9 @@ def main():
     html_body = markdown.markdown(content)
     
     # [랜덤 스타일 생성]
-    styles = ["cinematic 8k detailed", "futuristic data visualization", "minimalist blueprint", "dark mode cyberpunk", "abstract geometric patterns"]
+    styles = ["cinematic 8k detailed", "futuristic data visualization", "minimalist blueprint", "clean corporate chart", "professional financial report style"]
     angles = ["wide angle view", "close up on screen", "isometric view", "from a trading desk"]
-    colors = ["blue and purple", "green and gold", "monochrome dark", "orange and teal", "red and black"]
+    colors = ["blue and purple", "green and gold", "monochrome dark", "orange and teal", "navy and white"]
     
     random_style = f"{random.choice(styles)}, {random.choice(angles)}, {random.choice(colors)} theme"
     image_prompt = f"financial chart visualization about {topic}, {random_style}, no text, high quality"
@@ -292,7 +301,7 @@ def main():
     
     new_entry = {"date": datetime.now().strftime("%Y-%m-%d"), "title": topic, "file": archive_filename}
     history.insert(0, new_entry)
-    with open(HISTORY_FILE, "w") as f: json.dump(history, f, indent=4)
+    with open(HISTORY_FILE, "w", encoding="utf-8") as f: json.dump(history, f, indent=4)
     
     generate_sitemap(history)
     generate_archive_page(history)
