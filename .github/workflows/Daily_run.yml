@@ -4,7 +4,7 @@ on:
   push:
     branches: [ "main" ]
   schedule:
-    - cron: '0 */6 * * *' # 6시간마다 자동 실행
+    - cron: '0 */6 * * *' # 6시간마다 실행
   workflow_dispatch:      # 수동 실행 버튼
 
 jobs:
@@ -16,7 +16,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
       with:
-        fetch-depth: 0 # 과거 이력까지 모두 가져오기 (충돌 방지)
+        fetch-depth: 0
 
     - name: Set up Python 3.10
       uses: actions/setup-python@v3
@@ -28,7 +28,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install requests markdown feedparser tweepy
 
-    - name: Run Zombie Bot
+    - name: Run Zombie Bot Script
       env:
         GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         DEVTO_TOKEN: ${{ secrets.DEVTO_TOKEN }}
@@ -38,11 +38,11 @@ jobs:
         X_ACCESS_TOKEN_SECRET: ${{ secrets.X_ACCESS_TOKEN_SECRET }}
       run: python zombie_bot.py
 
-    - name: Commit and Push (Traffic Control Ver)
+    - name: Commit and Push Changes
       run: |
         git config --global user.name "Zombie Bot"
         git config --global user.email "bot@zombie.com"
         git add index.html
         git commit -m "📝 Daily Update: $(date)" || exit 0
-        git pull --rebase origin main  # ★핵심: 서버에 있는 걸 먼저 가져와서 합침
+        git pull --rebase origin main
         git push
