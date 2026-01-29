@@ -12,11 +12,13 @@ def get_env(key):
 GEMINI_API_KEY = get_env("GEMINI_API_KEY")
 DEVTO_TOKEN = get_env("DEVTO_TOKEN")
 
-# [사이트 설정]
-BLOG_TITLE = "Global Market Watch"
+# [★브랜드 리브랜딩: 좀비 봇 흔적 지우기]
+# URL은 zombie-bot이어도, 보여지는 이름은 'Empire Market Intelligence'입니다.
+BLOG_TITLE = "Empire Market Intelligence"
+BLOG_DESC = "Daily Crypto & Global Finance Briefing"
 BLOG_BASE_URL = "https://ramuh18.github.io/zombie-bot/"
 
-# [광고 설정]
+# [수익화 설정]
 EMPIRE_URL = "https://empire-analyst.digital/"
 AFFILIATE_LINK = "https://www.bybit.com/invite?ref=DOVWK5A" 
 AMAZON_TAG = "empireanalyst-20"
@@ -42,7 +44,7 @@ def get_hot_topic():
         raw_news = random.choice(feed.entries[:5]).title if feed.entries else "Bitcoin Analysis"
     except: raw_news = "Crypto Market Update"
 
-    prompt = f"Rewrite '{raw_news}' into a professional financial news title (MAX 9 WORDS). No clickbait."
+    prompt = f"Rewrite '{raw_news}' into a high-end financial newsletter title (MAX 9 WORDS). Professional, trustworthy tone."
     
     title = "Market Update"
     for _ in range(2):
@@ -88,7 +90,6 @@ def generate_sitemap(history):
     sitemap_xml += '</urlset>'
     with open("sitemap.xml", "w", encoding="utf-8") as f: f.write(sitemap_xml)
 
-# ★ 전체 글 목록 페이지(archive.html) 생성 함수
 def generate_archive_page(history):
     list_html = ""
     for h in history:
@@ -99,29 +100,8 @@ def generate_archive_page(history):
             <a href="{full_url}" style="font-size:1.1rem; font-weight:bold; text-decoration:none; color:#333;">{h['title']}</a>
         </div>
         """
-    
-    archive_html = f"""<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>All Posts - {BLOG_TITLE}</title>
-    <style>
-        body {{ font-family: 'Merriweather', serif; line-height: 1.6; max-width: 800px; margin: 0 auto; padding: 20px; color:#333; }}
-        h1 {{ border-bottom: 4px solid #dc2626; padding-bottom: 10px; }}
-        a:hover {{ color: #dc2626; }}
-        .btn {{ display:inline-block; margin-top:20px; background:#0f172a; color:#fff; padding:10px 20px; text-decoration:none; border-radius:4px; }}
-    </style>
-</head>
-<body>
-    <h1>📂 All Market Reports</h1>
-    {list_html}
-    <a href="index.html" class="btn">← Back to Home</a>
-</body>
-</html>"""
-    
+    archive_html = f"""<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Archive - {BLOG_TITLE}</title><style>body{{font-family:'Merriweather',serif;line-height:1.6;max-width:800px;margin:0 auto;padding:20px;color:#333;}}h1{{border-bottom:4px solid #0f172a;padding-bottom:10px;}}a:hover{{color:#dc2626;}}.btn{{display:inline-block;margin-top:20px;background:#0f172a;color:#fff;padding:10px 20px;text-decoration:none;border-radius:4px;}}</style></head><body><h1>📂 Intelligence Archive</h1>{list_html}<a href="index.html" class="btn">← Back to Briefing</a></body></html>"""
     with open("archive.html", "w", encoding="utf-8") as f: f.write(archive_html)
-    log("📚 아카이브 페이지(archive.html) 생성 완료")
 
 def get_sidebar_recent_posts(history, current_title):
     html = "<ul class='recent-posts'>"
@@ -133,15 +113,14 @@ def get_sidebar_recent_posts(history, current_title):
         count += 1
         if count >= 5: break
     html += "</ul>"
-    # ★ 사이드바에 '전체 보기' 버튼 추가
-    html += f"<div style='margin-top:15px; text-align:right;'><a href='{BLOG_BASE_URL}archive.html' style='font-size:0.85rem; color:#dc2626;'>📂 View All Posts →</a></div>"
+    html += f"<div style='margin-top:15px; text-align:right;'><a href='{BLOG_BASE_URL}archive.html' style='font-size:0.85rem; color:#dc2626; font-weight:bold;'>📂 View Full Archive →</a></div>"
     return html
 
 # ==========================================
 # [4. 본문 생성]
 # ==========================================
 def generate_part(topic, focus):
-    prompt = f"Write a professional financial analysis section on '{topic}'. Focus: {focus}. Length: 350 words. Use Markdown. Tone: Institutional."
+    prompt = f"Write a professional financial newsletter section on '{topic}'. Focus: {focus}. Length: 350 words. Use Markdown. Tone: Institutional, Analytical, Trustworthy."
     for _ in range(2):
         try:
             if GEMINI_API_KEY:
@@ -152,13 +131,14 @@ def generate_part(topic, focus):
             resp = requests.get(url, timeout=45)
             return resp.text
         except: time.sleep(1)
-    return "Content generating..."
+    return "Analyzing market data..."
 
 # ==========================================
-# [5. HTML 템플릿]
+# [5. HTML 템플릿 (신뢰도 & 법적 면책 강화)]
 # ==========================================
 def create_professional_html(topic, img_url, body_html, sidebar_html, canonical_url):
     google_verification = '<meta name="google-site-verification" content="Jxh9S9J3S5_RBIpJH4CVrDkpRiDZ_mQ99TfIm7xK7YY" />'
+    current_date = datetime.now().strftime("%Y-%m-%d")
     
     return f"""<!DOCTYPE html>
 <html lang="en">
@@ -166,80 +146,115 @@ def create_professional_html(topic, img_url, body_html, sidebar_html, canonical_
     <meta charset="UTF-8">
     {google_verification}
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Financial analysis on {topic}.">
-    <title>{topic} - {BLOG_TITLE}</title>
+    <meta name="description" content="Daily financial briefing on {topic}. Empire Market Intelligence provided by advanced analysis.">
+    <title>{topic} | {BLOG_TITLE}</title>
     <link rel="canonical" href="{canonical_url}" />
+    
     <meta property="og:type" content="article" />
     <meta property="og:title" content="{topic}" />
-    <meta property="og:description" content="Read full analysis." />
+    <meta property="og:description" content="Read the full daily briefing." />
     <meta property="og:image" content="{img_url}" />
     <meta property="og:url" content="{canonical_url}" />
     <meta name="twitter:card" content="summary_large_image" />
-    <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@300;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@300;700;900&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
-        :root {{ --primary: #0f172a; --accent: #dc2626; --bg: #ffffff; --text: #334155; --sidebar: #f1f5f9; }}
+        :root {{ --primary: #0f172a; --accent: #b91c1c; --bg: #ffffff; --text: #334155; --sidebar: #f8fafc; }}
         body {{ font-family: 'Merriweather', serif; line-height: 1.8; color: var(--text); background: var(--bg); margin: 0; }}
-        header {{ background: var(--primary); color: #fff; padding: 20px 0; border-bottom: 4px solid var(--accent); }}
+        
+        /* 뉴스레터 스타일 헤더 */
+        header {{ background: var(--primary); color: #fff; padding: 25px 0; border-bottom: 5px solid var(--accent); }}
         .header-wrap {{ max-width: 1100px; margin: 0 auto; padding: 0 20px; text-align: center; }}
-        .brand {{ font-family: 'Roboto', sans-serif; font-size: 1.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }}
-        .container {{ max-width: 1100px; margin: 40px auto; display: grid; grid-template-columns: 1fr; gap: 40px; padding: 0 20px; }}
-        @media(min-width: 900px) {{ .container {{ grid-template-columns: 2.5fr 1fr; }} }}
-        h1 {{ font-size: 2rem; color: #0f172a; line-height: 1.3; margin-top: 0; }}
-        .featured-img {{ width: 100%; height: auto; border-radius: 6px; margin-bottom: 25px; }}
-        .sidebar {{ background: var(--sidebar); padding: 25px; border-radius: 8px; height: fit-content; }}
-        .ad-box {{ display: block; padding: 20px; border-radius: 6px; text-align: center; text-decoration: none; margin-bottom: 15px; transition: transform 0.2s; }}
-        .ad-box:hover {{ transform: translateY(-3px); }}
-        .ad-main {{ background: #0f172a; color: #fff; border: 2px solid #0f172a; }}
-        .ad-affiliate {{ background: #fff; color: #000; border: 2px solid #f59e0b; }}
-        .ad-amazon {{ background: #fff; color: #333; border: 2px solid #ea580c; }}
-        .ad-title {{ display: block; font-weight: 700; font-size: 1.1rem; }}
-        .ad-desc {{ display: block; font-size: 0.85rem; opacity: 0.9; }}
+        .brand {{ font-family: 'Roboto', sans-serif; font-size: 2.2rem; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; line-height: 1.2; }}
+        .sub-brand {{ font-family: 'Roboto', sans-serif; font-size: 0.9rem; font-weight: 400; opacity: 0.8; margin-top: 5px; letter-spacing: 2px; }}
+        .date-badge {{ display: inline-block; background: var(--accent); color: #fff; padding: 4px 12px; border-radius: 20px; font-family: 'Roboto', sans-serif; font-size: 0.8rem; font-weight: bold; margin-top: 15px; }}
+
+        .container {{ max-width: 1100px; margin: 40px auto; display: grid; grid-template-columns: 1fr; gap: 50px; padding: 0 20px; }}
+        @media(min-width: 900px) {{ .container {{ grid-template-columns: 2.4fr 1fr; }} }}
+        
+        h1 {{ font-size: 2.4rem; color: #0f172a; line-height: 1.25; margin-top: 0; font-weight: 900; }}
+        .meta-info {{ font-family: 'Roboto', sans-serif; font-size: 0.85rem; color: #64748b; margin-bottom: 20px; font-weight: 500; text-transform: uppercase; }}
+        
+        .featured-img {{ width: 100%; height: auto; border-radius: 8px; margin-bottom: 30px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }}
+        
+        /* 사이드바 & 광고 */
+        .sidebar {{ background: var(--sidebar); padding: 30px; border-radius: 12px; height: fit-content; border: 1px solid #e2e8f0; }}
+        .widget {{ margin-bottom: 40px; }}
+        .widget h3 {{ font-family: 'Roboto', sans-serif; font-size: 0.85rem; text-transform: uppercase; color: #94a3b8; letter-spacing: 1px; border-bottom: 2px solid #cbd5e1; padding-bottom: 8px; margin-bottom: 20px; font-weight: 700; }}
+        
+        .ad-box {{ display: block; padding: 25px 20px; border-radius: 8px; text-align: center; text-decoration: none; margin-bottom: 15px; transition: all 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }}
+        .ad-box:hover {{ transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }}
+        .ad-main {{ background: #0f172a; color: #fff; border: 1px solid #0f172a; }}
+        .ad-affiliate {{ background: #ffffff; color: #0f172a; border: 2px solid #f59e0b; }}
+        .ad-amazon {{ background: #ffffff; color: #0f172a; border: 2px solid #ea580c; }}
+        .ad-title {{ display: block; font-weight: 900; font-size: 1.2rem; font-family: 'Roboto', sans-serif; margin-bottom: 5px; }}
+        .ad-desc {{ display: block; font-size: 0.9rem; opacity: 0.9; }}
+
         a {{ color: var(--accent); text-decoration: none; font-weight: 700; }}
-        .recent-posts {{ list-style: none; padding: 0; }}
-        .recent-posts li {{ margin-bottom: 12px; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px; }}
-        footer {{ background: #0f172a; color: #94a3b8; text-align: center; padding: 40px 0; margin-top: 60px; font-size: 0.8rem; }}
+        .recent-posts li {{ margin-bottom: 15px; border-bottom: 1px solid #e2e8f0; padding-bottom: 15px; }}
+        
+        footer {{ background: #0f172a; color: #64748b; text-align: center; padding: 50px 0; margin-top: 80px; font-size: 0.8rem; font-family: 'Roboto', sans-serif; }}
+        .disclaimer {{ max-width: 800px; margin: 20px auto; line-height: 1.6; opacity: 0.7; font-size: 0.75rem; }}
     </style>
 </head>
 <body>
-<header><div class="header-wrap"><div class="brand">{BLOG_TITLE}</div></div></header>
+<header>
+    <div class="header-wrap">
+        <div class="brand">{BLOG_TITLE}</div>
+        <div class="sub-brand">{BLOG_DESC}</div>
+        <div class="date-badge">📅 DAILY BRIEFING #{current_date}</div>
+    </div>
+</header>
 <div class="container">
     <main>
         <article>
-            <div style="font-size:0.8rem; color:#64748b; margin-bottom:15px; font-family:'Roboto',sans-serif;">MARKET INSIGHT • {datetime.now().strftime("%Y-%m-%d")}</div>
+            <div class="meta-info">Global Markets • Crypto • {current_date}</div>
             <h1>{topic}</h1>
             <img src="{img_url}" class="featured-img" alt="{topic}">
             {body_html}
+            <div style="margin-top:40px; padding:20px; background:#f1f5f9; border-left:4px solid var(--primary); font-size:0.9rem;">
+                <strong>💡 Editor's Note:</strong> This briefing is generated for informational purposes. Always do your own research.
+                <br>Bookmark this page (Ctrl+D) to get daily market intelligence.
+            </div>
         </article>
     </main>
     <aside class="sidebar">
         <div class="widget">
-            <h3 style="font-family:'Roboto',sans-serif;font-size:0.9rem;text-transform:uppercase;color:#64748b;border-bottom:1px solid #cbd5e1;padding-bottom:8px;margin-bottom:15px;">👑 Official Headquarters</h3>
+            <h3>👑 Official Headquarters</h3>
             <a href="{EMPIRE_URL}" class="ad-box ad-main">
                 <span class="ad-title">Empire Analyst HQ</span>
-                <span class="ad-desc">Deep Dive Analysis →</span>
+                <span class="ad-desc">Get Full Institutional Reports & Deep Dive Analysis →</span>
             </a>
         </div>
         <div class="widget">
-            <h3 style="font-family:'Roboto',sans-serif;font-size:0.9rem;text-transform:uppercase;color:#64748b;border-bottom:1px solid #cbd5e1;padding-bottom:8px;margin-bottom:15px;">🚀 Trading Bonus</h3>
+            <h3>🚀 Limited Offer</h3>
             <a href="{AFFILIATE_LINK}" class="ad-box ad-affiliate">
-                <span class="ad-title">💰 $30,000 Reward</span>
-                <span class="ad-desc">Exclusive Sign-up Bonus</span>
+                <span class="ad-title">💰 $30,000 Bonus</span>
+                <span class="ad-desc">Exclusive Sign-up Reward for New Traders</span>
             </a>
         </div>
         <div class="widget">
-            <h3 style="font-family:'Roboto',sans-serif;font-size:0.9rem;text-transform:uppercase;color:#64748b;border-bottom:1px solid #cbd5e1;padding-bottom:8px;margin-bottom:15px;">🛡️ Secure Assets</h3>
+            <h3>🛡️ Security Essentials</h3>
             <a href="{AMAZON_LINK}" class="ad-box ad-amazon">
                 <span class="ad-title">📦 Hardware Wallets</span>
-                <span class="ad-desc">Buy Ledger/Trezor Safely</span>
+                <span class="ad-desc">Secure Your Crypto with Ledger (Amazon Official)</span>
             </a>
         </div>
         <div class="widget">
-            <h3 style="font-family:'Roboto',sans-serif;font-size:0.9rem;text-transform:uppercase;color:#64748b;border-bottom:1px solid #cbd5e1;padding-bottom:8px;margin-bottom:15px;">📂 Recent News</h3>
+            <h3>📂 Recent Intelligence</h3>
             {sidebar_html}
         </div>
     </aside>
 </div>
-<footer>&copy; 2026 {BLOG_TITLE}. <a href="{EMPIRE_URL}" style="color:#cbd5e1;">Official Site</a></footer>
+<footer>
+    <div>&copy; 2026 {BLOG_TITLE}. All rights reserved.</div>
+    <div class="disclaimer">
+        <strong>Affiliate & Amazon Disclaimer:</strong><br>
+        {BLOG_TITLE} is a participant in the Amazon Services LLC Associates Program, an affiliate advertising program designed to provide a means for sites to earn advertising fees by advertising and linking to Amazon.com. As an Amazon Associate I earn from qualifying purchases.
+        <br>Some links on this page may be affiliate links.
+    </div>
+    <br><a href="{EMPIRE_URL}" style="color:#94a3b8; text-decoration:underline;">Visit Official Website</a>
+</footer>
 </body>
 </html>"""
 
@@ -247,14 +262,14 @@ def create_professional_html(topic, img_url, body_html, sidebar_html, canonical_
 # [6. 메인 실행]
 # ==========================================
 def main():
-    log("🏁 봇 가동 (Archive Added)")
+    log("🏁 봇 가동 (Trust & Compliance Upgrade)")
     topic = get_hot_topic()
     log(f"🔥 주제: {topic}")
     
     content = ""
     content += generate_part(topic, "Macro Outlook") + "\n\n"
     content += generate_part(topic, "Technical Analysis") + "\n\n"
-    content += generate_part(topic, "Actionable Strategy")
+    content += generate_part(topic, "Strategic Action")
     html_body = markdown.markdown(content)
     
     file_timestamp = datetime.now().strftime("%Y%m%d_%H%M")
@@ -270,7 +285,7 @@ def main():
     with open(HISTORY_FILE, "w") as f: json.dump(history, f, indent=4)
     
     generate_sitemap(history)
-    generate_archive_page(history) # ★ 여기서 전체 글 목록 페이지 생성
+    generate_archive_page(history)
     
     full_html = create_professional_html(topic, img_url, html_body, sidebar_html, full_url)
     
@@ -280,7 +295,7 @@ def main():
 
     if DEVTO_TOKEN:
         try:
-            dev_md = f"# {topic}\n\n![Chart]({img_url})\n\n{content}\n\n## 🔗 More Insights\n[Visit Official Headquarters]({EMPIRE_URL})"
+            dev_md = f"# {topic}\n\n![Chart]({img_url})\n\n{content}\n\n## 🔗 Full Briefing\n[Read on Empire Market Intelligence]({full_url})"
             payload = {"article": {"title": topic, "published": True, "body_markdown": dev_md, "tags": ["finance", "crypto"], "canonical_url": full_url}}
             requests.post("https://dev.to/api/articles", headers={"api-key": DEVTO_TOKEN}, json=payload, timeout=15)
             log("✅ Dev.to 성공")
