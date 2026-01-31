@@ -10,96 +10,90 @@ def log(msg): print(f"[{datetime.now().strftime('%H:%M:%S')}] {msg}")
 
 # [Configuration]
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "").strip()
-BLOG_TITLE = "Capital Insight"
+BLOG_TITLE = "Capital Insight" 
 BLOG_BASE_URL = "https://ramuh18.github.io/capital-insight/" 
 EMPIRE_URL = "https://empire-analyst.digital/"
 HISTORY_FILE = os.path.join(BASE_DIR, "history.json")
 
-# [📊 실시간 트렌드 가져오기 함수]
+# 수익화 링크 복구
+AFFILIATE_LINK = "https://www.bybit.com/invite?ref=DOVWK5A" 
+AMAZON_LINK = "https://www.amazon.com/s?k=ledger+nano+x&tag=empireanalyst-20"
+
 def get_google_trends():
     try:
-        # 미국 경제 트렌드 RSS (API 없이 접근 가능)
         url = "https://trends.google.com/trends/trendingsearches/daily/rss?geo=US"
         resp = requests.get(url, timeout=20)
         titles = re.findall(r"<title>(.*?)</title>", resp.text)
-        # 상위 1~2위는 무관할 수 있으므로 3~10위 사이에서 랜덤 선택
-        if len(titles) > 5:
-            return titles[3:10]
-        return ["Global Market Reset", "Interest Rate Shift", "Digital Asset Surge"]
+        return titles[3:13] if len(titles) > 5 else ["Global Market Reset", "Interest Rate Shift"]
     except:
-        return ["Economic Supercycle", "Inflationary Pressure", "Market Liquidity"]
+        return ["Economic Supercycle", "Market Liquidity"]
 
-# [🏛️ 1,500자급 하이브리드 원고 생성기]
-def generate_trend_report(topic):
-    # API가 될 때와 안 될 때를 모두 대비한 템플릿
-    prompt = f"Write a 1500-word financial analysis about '{topic}'. Tone: Institutional. English Only. Markdown."
-    
+def generate_report(topic):
+    prompt = f"Write a professional 1500-word financial report on '{topic}'. Tone: Institutional. English Only. Markdown."
     try:
         url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
-        resp = requests.post(url, json={"contents": [{"parts": [{"text": prompt}]}], "generationConfig": {"temperature": 0.5, "maxOutputTokens": 1800}}, timeout=40)
-        if resp.status_code == 200:
-            return resp.json()['candidates'][0]['content']['parts'][0]['text'].strip()
+        resp = requests.post(url, json={"contents": [{"parts": [{"text": prompt}]}], "generationConfig": {"temperature": 0.6, "maxOutputTokens": 1800}}, timeout=40)
+        return resp.json()['candidates'][0]['content']['parts'][0]['text'].strip()
     except:
-        pass
-
-    # [API 실패 시] 트렌드 키워드를 녹여낸 1,500자급 고정 리포트
-    return f"""
-# Strategic Analysis: The Impact of {topic} on 2026 Markets
-
-The recent surge in interest regarding **{topic}** indicates a significant shift in market sentiment. Our strategic intelligence unit has monitored these developments closely to provide a comprehensive outlook.
-
-## 1. Macro-Economic Context
-The current trend of {topic} is not isolated. It follows a period of intense institutional accumulation and geopolitical realignment. As global liquidity tightens, assets related to {topic} are showing unprecedented volatility.
-
-## 2. Institutional Response
-Major hedge funds and sovereign wealth funds are repositioning their portfolios to account for the {topic} phenomenon. This move suggests that the underlying factors driving this trend are systemic rather than transitory.
-
-## 3. Risk and Opportunity
-For the retail investor, {topic} represents both a critical risk and a sovereign opportunity. Failure to secure one's assets in hardware-based storage could lead to significant capital erasure.
-
-## 4. Final Conclusion
-Monitoring {topic} is essential for the 2026 fiscal cycle. We recommend immediate migration to cold storage and the adoption of automated wealth preservation strategies.
-    """
+        return f"# Analysis: {topic}\n\nThe current trend of **{topic}** is reshaping the 2026 fiscal landscape. Institutional shifts are becoming more apparent as liquidity tightens..."
 
 def create_final_html(topic, img_url, body_html, sidebar_html):
+    # 상단 로고(header)와 사이드바 버튼(side-card) 디자인 복구
     return f"""<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{topic}</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Oswald:wght@700&display=swap" rel="stylesheet">
     <style>
         body {{ font-family: 'Inter', sans-serif; background: #f4f7f9; color: #333; line-height: 1.8; margin: 0; }}
-        header {{ background: #003366; color: white; padding: 25px; text-align: center; position: sticky; top:0; z-index:100; }}
-        .container {{ max-width: 1200px; margin: 40px auto; display: grid; grid-template-columns: 1fr 320px; gap: 40px; padding: 0 20px; }}
-        @media(max-width: 1000px) {{ .container {{ grid-template-columns: 1fr; }} .sidebar {{ position: static; }} }}
+        header {{ background: #003366; color: white; padding: 30px; text-align: center; border-bottom: 5px solid #00509d; }}
+        .brand {{ font-family: 'Oswald', sans-serif; font-size: 2.5rem; letter-spacing: 2px; text-transform: uppercase; }}
+        
+        .container {{ max-width: 1300px; margin: 40px auto; display: grid; grid-template-columns: 1fr 340px; gap: 40px; padding: 0 20px; }}
+        @media(max-width: 1100px) {{ .container {{ grid-template-columns: 1fr; }} .sidebar {{ position: static; }} }}
+        
         main {{ background: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }}
-        h1 {{ color: #003366; font-size: 2.8rem; line-height: 1.1; }}
-        img {{ width: 100%; height: 450px; object-fit: cover; border-radius: 8px; margin-bottom: 30px; }}
-        .sidebar {{ background: #fff; padding: 25px; border-radius: 8px; border-top: 4px solid #003366; }}
-        .btn {{ display: block; padding: 15px; background: #003366; color: white; text-align: center; text-decoration: none; font-weight: bold; margin-top: 20px; }}
-        footer {{ text-align: center; padding: 60px; color: #888; }}
+        h1 {{ color: #003366; font-size: 3rem; line-height: 1.1; margin-top: 0; }}
+        img {{ width: 100%; height: 500px; object-fit: cover; border-radius: 8px; margin-bottom: 30px; }}
+        
+        .sidebar {{ background: transparent; }}
+        .side-card {{ background: #fff; padding: 25px; border-radius: 8px; border-top: 5px solid #003366; margin-bottom: 25px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }}
+        .btn {{ display: block; padding: 18px; background: #003366; color: white; text-align: center; text-decoration: none; font-weight: bold; margin-bottom: 12px; border-radius: 4px; transition: 0.3s; }}
+        .btn-red {{ background: #e60000; }}
+        .btn:hover {{ filter: brightness(1.2); }}
+        
+        footer {{ text-align: center; padding: 80px 20px; color: #888; border-top: 1px solid #ddd; margin-top: 60px; }}
     </style></head>
     <body>
-    <header><h1>{BLOG_TITLE}</h1></header>
+    <header><div class="brand">{BLOG_TITLE}</div></header>
     <div class="container">
         <main><h1>{topic}</h1><img src="{img_url}"><div class="content">{body_html}</div></main>
-        <aside class="sidebar"><h3>TRENDING NOW</h3><ul style="list-style:none; padding:0;">{sidebar_html}</ul><a href="{EMPIRE_URL}" class="btn">ACCESS FULL INTEL</a></aside>
+        <aside class="sidebar">
+            <div class="side-card">
+                <a href="{EMPIRE_URL}" class="btn btn-red">🛑 ACCESS FULL INTEL</a>
+                <a href="{AFFILIATE_LINK}" class="btn">📉 SHORT MARKET</a>
+                <a href="{AMAZON_LINK}" class="btn">🛡️ SECURE ASSETS (Ledger)</a>
+            </div>
+            <div class="side-card">
+                <h3 style="margin-top:0; color:#003366; border-bottom:2px solid #003366;">TRENDING NOW</h3>
+                <ul style="list-style:none; padding:0; line-height:2.2; font-size:0.9rem;">{sidebar_html}</ul>
+            </div>
+        </aside>
     </div>
-    <footer>&copy; 2026 {BLOG_TITLE}</footer></body></html>"""
+    <footer>&copy; 2026 {BLOG_TITLE} | Amazon Associate Disclaimer included.</footer></body></html>"""
 
 def main():
-    log("⚡ Trend-Tracking Update Initiated...")
+    log("⚡ Rebuilding UI with Trend Logic...")
     trends = get_google_trends()
     topic = random.choice(trends)
-    
-    full_text = generate_trend_report(topic)
+    full_text = generate_report(topic)
     html_body = markdown.markdown(full_text)
-    img_url = f"https://image.pollinations.ai/prompt/{urllib.parse.quote('abstract financial data crystal red blue 8k')}"
+    img_url = f"https://image.pollinations.ai/prompt/{urllib.parse.quote('professional finance blue dark 8k photography')}?width=1200&height=500"
     
     history = []
     if os.path.exists(HISTORY_FILE):
         with open(HISTORY_FILE, "r", encoding="utf-8") as f: history = json.load(f)
     
-    sidebar_html = "".join([f"<li><a href='{BLOG_BASE_URL}{h.get('file','')}' style='color:#003366;'>{h.get('title')[:30]}...</a></li>" for h in history[:10]])
+    sidebar_html = "".join([f"<li><a href='{BLOG_BASE_URL}{h.get('file','')}' style='color:#333; text-decoration:none;'>[{h.get('date')}] {h.get('title')[:25]}...</a></li>" for h in history[:10]])
     archive_name = f"post_{datetime.now().strftime('%Y%m%d_%H%M')}.html"
     history.insert(0, {"date": datetime.now().strftime("%Y-%m-%d"), "title": topic, "file": archive_name})
     with open(HISTORY_FILE, "w", encoding="utf-8") as f: json.dump(history, f, indent=4)
@@ -107,6 +101,6 @@ def main():
     full_html = create_final_html(topic, img_url, html_body, sidebar_html)
     with open("index.html", "w", encoding="utf-8") as f: f.write(full_html)
     with open(archive_name, "w", encoding="utf-8") as f: f.write(full_html)
-    log(f"✅ Trend Update Complete: {topic}")
+    log(f"✅ Recovery Complete: {topic}")
 
 if __name__ == "__main__": main()
