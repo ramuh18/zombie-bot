@@ -14,7 +14,7 @@ HISTORY_FILE = os.path.join(BASE_DIR, "history.json")
 AFFILIATE_LINK = "https://www.bybit.com/invite?ref=DOVWK5A" 
 AMAZON_LINK = "https://www.amazon.com/s?k=ledger+nano+x&tag=empireanalyst-20"
 
-# [주제 리스트: 50개]
+# [주제 리스트 50개 유지]
 BACKUP_TOPICS = [
     "The Collapse of Fiat Currency", "Why Your Savings Are Dying", "The Next Great Depression",
     "Hyperinflation Warning Signs", "Bank Bail-ins Explained", "The End of the Dollar",
@@ -35,7 +35,7 @@ BACKUP_TOPICS = [
     "Capital Controls Coming", "Exit Strategies for 2026"
 ]
 
-# [핵심] 블록 15개 (내용 조립용)
+# [문단 블록 15개 유지 - 내용은 길게]
 CONTENT_BLOCKS = [
     """
     ## The Silent Wealth Transfer
@@ -59,9 +59,9 @@ CONTENT_BLOCKS = [
     1. **Audit your exposure:** How much of your net worth is tied to the success of the legacy system?
     2. **Hedge aggressively:** Use assets that inversely correlate with {topic}.
     3. **Self-Custody:** If you don't hold the keys, you don't own the chips.
-    <div style="margin: 20px 0; padding: 15px; background: #ffebee; border-left: 5px solid #d90429;">
-        <strong>🚨 CRITICAL ALERT:</strong> The window to secure your assets is closing. 
-        <a href="{AMAZON_LINK}" style="color: #d90429; font-weight: bold;">[GET COLD STORAGE HARDWARE NOW]</a>
+    <div style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-left: 5px solid #001f3f;">
+        <strong>💡 Strategic Move:</strong> Secure your assets offline. 
+        <a href="{AMAZON_LINK}" style="color: #001f3f; font-weight: bold;">[View Hardware Wallet Options]</a>
     </div>
     """,
     """
@@ -111,32 +111,33 @@ def get_live_trends():
     return [selected_topic]
 
 def generate_deep_report(topic):
-    # 1. 인트로
+    # 인트로 (톤을 조금 차분하게 조정)
     intro = f"""
-# [URGENT_WARNING] The Truth About {topic} That They Won't Tell You
+# Strategic Analysis: {topic}
 
 ## Executive Summary
-The global financial system is flashing red warning signals regarding **{topic}**. While the masses are asleep, a systemic shift is underway that will redefine wealth distribution for the next decade. This report exposes the harsh reality of {topic} and provides a roadmap for survival.
+The global financial system is flashing warning signals regarding **{topic}**. While the masses are unaware, a systemic shift is underway that will redefine wealth distribution for the next decade. This report exposes the reality of {topic} and provides a roadmap for preservation.
 """
     
-    # 2. 본문 확장 (15개 중 5개 랜덤 조립)
+    # 5개 블록 랜덤 조립
     selected_blocks = random.sample(CONTENT_BLOCKS, 5)
     body_content = ""
     for block in selected_blocks:
         body_content += block.format(topic=topic, AMAZON_LINK=AMAZON_LINK) + "\n"
 
-    # 3. 결론
+    # 결론 (깔끔한 디자인으로 변경)
     conclusion = f"""
-## Final Verdict: The Time is Now
-The timeline for **{topic}** is accelerating faster than anticipated. You can choose to ignore the warning signs, or you can take action today.
+## Final Verdict
+The timeline for **{topic}** is accelerating. You can choose to ignore the indicators, or you can take action today.
 <br><br>
-**Don't let your wealth evaporate.**
-<div style="background: #f0f2f5; padding: 20px; text-align: center; border: 2px solid #001f3f; margin-top: 20px;">
-    <h3>🚀 EXECUTE YOUR EXIT PLAN</h3>
-    <p>The system is fragile. Secure your position before the liquidity dries up.</p>
-    <a href="{EMPIRE_URL}" style="background: #d90429; color: white; padding: 15px 30px; text-decoration: none; font-weight: bold; border-radius: 5px; display: inline-block;">ACCESS FULL STRATEGY GUIDE</a>
-    <br><br>
-    <a href="{AFFILIATE_LINK}" style="color: #001f3f; font-weight: bold; text-decoration: underline;">>> Hedge with Derivatives on Bybit</a>
+**Secure your position before liquidity dries up.**
+<div style="background: #fff; padding: 20px; border: 1px solid #ddd; margin-top: 20px; border-radius: 4px;">
+    <h3>🚀 Recommended Actions</h3>
+    <ul style="margin-bottom: 20px;">
+        <li>Review your exposure to fiat currency risks.</li>
+        <li>Consider hedging with non-correlated assets.</li>
+    </ul>
+    <a href="{EMPIRE_URL}" style="background: #001f3f; color: white; padding: 10px 20px; text-decoration: none; font-weight: bold; border-radius: 4px; font-size: 0.9rem;">ACCESS FULL STRATEGY GUIDE</a>
 </div>
 """
     return intro + body_content + conclusion
@@ -155,65 +156,64 @@ def create_final_html(topic, img_url, body_html, sidebar_html):
     return f"""<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="google-site-verification" content="여기에_인증태그_입력" />
-    <title>WARNING: {topic} | {BLOG_TITLE}</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Oswald:wght@700&display=swap" rel="stylesheet">
+    <title>{topic} | {BLOG_TITLE}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Merriweather:wght@700&display=swap" rel="stylesheet">
     <style>
-        :root {{ --main-blue: #001f3f; --accent-gold: #c5a059; --alert-red: #d90429; }}
-        body {{ font-family: 'Inter', sans-serif; background: #f0f2f5; color: #1a1a1a; line-height: 1.8; margin: 0; }}
-        header {{ background: var(--main-blue); color: #fff; padding: 25px; text-align: center; border-bottom: 5px solid var(--alert-red); }}
-        .brand {{ font-family: 'Oswald', sans-serif; font-size: 2.5rem; letter-spacing: 1px; text-transform: uppercase; color: #fff; }}
-        .container {{ max-width: 1300px; margin: 30px auto; display: grid; grid-template-columns: 1fr 340px; gap: 40px; padding: 0 20px; }}
-        @media(max-width: 1000px) {{ .container {{ grid-template-columns: 1fr; }} }}
-        main {{ background: #fff; padding: 45px; border-radius: 8px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); border: 1px solid #ddd; }}
-        h1 {{ color: var(--alert-red); font-family: 'Oswald', sans-serif; font-size: 2.8rem; line-height: 1.2; text-transform: uppercase; }}
-        .content h2 {{ color: var(--main-blue); font-family: 'Oswald'; margin-top: 40px; border-left: 6px solid var(--accent-gold); padding-left: 15px; font-size: 1.8rem; }}
-        img {{ width: 100%; height: auto; border-radius: 4px; margin-bottom: 30px; border: 1px solid #ccc; }}
-        .side-card {{ background: #fff; padding: 25px; border-top: 5px solid var(--main-blue); box-shadow: 0 5px 15px rgba(0,0,0,0.05); margin-bottom: 20px; border-radius: 4px; }}
-        .btn {{ display: block; padding: 18px; background: var(--alert-red); color: #fff; text-decoration: none; font-weight: bold; text-align: center; margin-bottom: 12px; border-radius: 6px; font-size: 1.1rem; transition: transform 0.2s; }}
-        .btn:hover {{ transform: scale(1.02); background: #b00020; }}
-        footer {{ text-align: center; padding: 60px; color: #777; border-top: 1px solid #ddd; background: #fff; margin-top: 40px; }}
-        .footer-links a {{ color: #555; text-decoration: none; margin: 0 10px; cursor: pointer; }}
-        .amazon-disclaimer {{ font-size: 0.75rem; color: #aaa; margin-top: 15px; font-style: italic; }}
-        a {{ color: var(--main-blue); text-decoration: underline; font-weight: bold; }}
-        a:hover {{ color: var(--alert-red); }}
-        .modal {{ display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); }}
-        .modal-content {{ background: #fff; margin: 15% auto; padding: 40px; width: 80%; max-width: 600px; border-radius: 8px; position: relative; }}
-        .close {{ position: absolute; top: 10px; right: 20px; font-size: 30px; cursor: pointer; color: #333; }}
+        :root {{ --main-blue: #001f3f; --accent-gold: #c5a059; }}
+        body {{ font-family: 'Inter', sans-serif; background: #f8f9fa; color: #333; line-height: 1.8; margin: 0; }}
+        header {{ background: var(--main-blue); color: #fff; padding: 25px; text-align: center; border-bottom: 5px solid var(--accent-gold); }}
+        .brand {{ font-family: 'Merriweather', serif; font-size: 2rem; letter-spacing: 1px; }}
+        /* [수정] 너비를 다시 표준(1100px)으로 줄임 */
+        .container {{ max-width: 1100px; margin: 40px auto; display: grid; grid-template-columns: 1fr 320px; gap: 40px; padding: 0 20px; }}
+        @media(max-width: 900px) {{ .container {{ grid-template-columns: 1fr; }} }}
+        main {{ background: #fff; padding: 50px; border: 1px solid #ddd; box-shadow: 0 5px 15px rgba(0,0,0,0.05); border-radius: 4px; }}
+        /* [수정] 제목 크기 정상화 */
+        h1 {{ color: var(--main-blue); font-family: 'Merriweather', serif; font-size: 2.2rem; margin-top:0; }}
+        .content h2 {{ color: #2c3e50; margin-top: 40px; border-bottom: 2px solid var(--accent-gold); padding-bottom: 10px; font-size: 1.5rem; }}
+        img {{ width: 100%; height: auto; margin-bottom: 30px; border-radius: 4px; }}
+        .side-card {{ background: #fff; padding: 25px; border: 1px solid #ddd; margin-bottom: 20px; border-top: 4px solid var(--main-blue); }}
+        .btn {{ display: block; padding: 12px; background: var(--main-blue); color: #fff; text-decoration: none; font-weight: bold; text-align: center; margin-bottom: 10px; border-radius: 4px; font-size: 0.9rem; }}
+        .btn:hover {{ background: #003366; }}
+        footer {{ text-align: center; padding: 50px; color: #666; background: #fff; border-top: 1px solid #eee; margin-top: 50px; }}
+        .footer-links a {{ color: #555; margin: 0 10px; cursor: pointer; text-decoration: none; }}
+        .amazon-disclaimer {{ font-size: 0.8rem; color: #999; margin-top: 20px; font-style: italic; }}
+        .modal {{ display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); }}
+        .modal-content {{ background: #fff; margin: 15% auto; padding: 30px; width: 80%; max-width: 600px; border-radius: 8px; }}
+        .close {{ float: right; font-size: 28px; cursor: pointer; }}
     </style></head>
     <body>
-    <header><div class="brand">CAPITAL INSIGHT</div><div style="font-size:0.9rem; color:#ccc;">WARNING: SYSTEMIC RISK DETECTED</div></header>
+    <header><div class="brand">{BLOG_TITLE}</div></header>
     <div class="container">
         <main>
-            <div style="background: #ffebee; color: #c62828; padding: 10px; font-weight: bold; display: inline-block; margin-bottom: 15px; border-radius: 4px;">⚠️ URGENT MARKET UPDATE</div>
+            <div style="color:#666; font-size:0.9rem; margin-bottom:10px; text-transform:uppercase; letter-spacing:1px;">Market Intelligence Report</div>
             <h1>{topic}</h1><img src="{img_url}"><div class="content">{body_html}</div>
         </main>
         <aside class="sidebar">
             <div class="side-card">
-                <div style="text-align:center; font-weight:bold; margin-bottom:15px; color:#d90429;">🔻 PROTECT YOUR WEALTH</div>
-                <a href="{EMPIRE_URL}" class="btn">🚀 EXECUTE EXIT PLAN</a>
-                <a href="{AFFILIATE_LINK}" class="btn" style="background: #001f3f;">📉 SHORT THE BANKS</a>
-                <a href="{AMAZON_LINK}" class="btn" style="background: #f59f00; color:#000;">🛡️ BUY HARDWARE WALLET</a>
+                <h3 style="margin-top:0; color:var(--main-blue);">Strategic Access</h3>
+                <a href="{EMPIRE_URL}" class="btn">🚀 EXIT PLAN STRATEGY</a>
+                <a href="{AFFILIATE_LINK}" class="btn" style="background:#444;">📉 SHORT MARKET</a>
+                <a href="{AMAZON_LINK}" class="btn" style="background:#c5a059;">🛡️ SECURE ASSETS</a>
             </div>
             <div class="side-card">
-                <h3 style="color:var(--main-blue); font-family:'Oswald'; border-bottom:2px solid #eee; padding-bottom:10px;">RECENT ALERTS</h3>
-                <ul style="list-style:none; padding:0; font-size:0.9rem;">{sidebar_html}</ul>
+                <h3>Latest Analysis</h3>
+                <ul style="padding-left:20px; line-height:1.6;">{sidebar_html}</ul>
             </div>
         </aside>
     </div>
     <footer>
         <div class="footer-links">
-            <a onclick="openModal('about')">About</a>
-            <a onclick="openModal('privacy')">Privacy</a>
+            <a onclick="openModal('about')">About Us</a>
+            <a onclick="openModal('privacy')">Privacy Policy</a>
             <a onclick="openModal('contact')">Contact</a>
         </div>
-        &copy; 2026 {BLOG_TITLE}. <br>
-        <span style="font-size:0.8rem;">Disclaimer: This content is for informational purposes only. Trading involves risk.</span>
+        &copy; 2026 {BLOG_TITLE}. All Rights Reserved.
         <div class="amazon-disclaimer">* As an Amazon Associate, we earn from qualifying purchases.</div>
     </footer>
     <div id="infoModal" class="modal"><div class="modal-content"><span class="close" onclick="closeModal()">&times;</span><div id="modalBody"></div></div></div>
     <script>
         const info = {{
-            about: "<h2>About Capital Insight</h2><p>We provide unfiltered analysis of the global financial collapse and strategies for wealth preservation.</p>",
+            about: "<h2>About Capital Insight</h2><p>We provide in-depth analysis of global financial trends and wealth preservation strategies.</p>",
             privacy: "<h2>Privacy Policy</h2><p>We respect your privacy. Standard analytics cookies are used.</p>",
             contact: "<h2>Contact</h2><p>Email: admin@empire-analyst.digital</p>"
         }};
@@ -226,17 +226,16 @@ def main():
     topic = get_live_trends()[0] 
     body_text = generate_deep_report(topic) 
     html_body = markdown.markdown(body_text)
-    img_url = f"https://image.pollinations.ai/prompt/{urllib.parse.quote('financial crisis panic wall street crash red charts dark cinematic 8k')}?width=1200&height=600"
+    # 이미지도 약간 차분하고 전문적인 느낌으로
+    img_url = f"https://image.pollinations.ai/prompt/{urllib.parse.quote('financial data visualization dark blue corporate style 8k')}?width=1200&height=600"
     
     history = []
     if os.path.exists(HISTORY_FILE):
         with open(HISTORY_FILE, "r", encoding="utf-8") as f: history = json.load(f)
     
-    sidebar_html = "".join([f"<li style='margin-bottom:10px;'>🚨 <a href='{BLOG_BASE_URL}{h.get('file','')}' style='color:#333; text-decoration:none;'>{h.get('title')[:25]}...</a></li>" for h in history[:10]])
+    sidebar_html = "".join([f"<li><a href='{BLOG_BASE_URL}{h.get('file','')}' style='color:#333; text-decoration:none;'>{h.get('title')[:25]}...</a></li>" for h in history[:10]])
     
-    # [수정 완료] 아래 라인이 에러가 났던 부분입니다. 확실히 고쳤습니다.
     archive_name = f"post_{datetime.now().strftime('%Y%m%d_%H%M')}.html"
-    
     history.insert(0, {"date": datetime.now().strftime("%Y-%m-%d"), "title": topic, "file": archive_name})
     
     with open(HISTORY_FILE, "w", encoding="utf-8") as f: json.dump(history, f, indent=4)
