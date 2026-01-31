@@ -35,7 +35,7 @@ BACKUP_TOPICS = [
     "Capital Controls Coming", "Exit Strategies for 2026"
 ]
 
-# [핵심] 블록을 15개로 늘려서 조합의 수를 기하급수적으로 폭발시킴
+# [핵심] 블록 15개 (내용 조립용)
 CONTENT_BLOCKS = [
     """
     ## The Silent Wealth Transfer
@@ -119,14 +119,13 @@ def generate_deep_report(topic):
 The global financial system is flashing red warning signals regarding **{topic}**. While the masses are asleep, a systemic shift is underway that will redefine wealth distribution for the next decade. This report exposes the harsh reality of {topic} and provides a roadmap for survival.
 """
     
-    # 2. 본문 확장 (15개 블록 중 5개를 랜덤으로 뽑음 -> 조합 경우의 수 폭발)
-    # 글이 매번 순서와 내용이 다르게 조립됨
+    # 2. 본문 확장 (15개 중 5개 랜덤 조립)
     selected_blocks = random.sample(CONTENT_BLOCKS, 5)
     body_content = ""
     for block in selected_blocks:
         body_content += block.format(topic=topic, AMAZON_LINK=AMAZON_LINK) + "\n"
 
-    # 3. 결론 및 CTA
+    # 3. 결론
     conclusion = f"""
 ## Final Verdict: The Time is Now
 The timeline for **{topic}** is accelerating faster than anticipated. You can choose to ignore the warning signs, or you can take action today.
@@ -235,4 +234,16 @@ def main():
     
     sidebar_html = "".join([f"<li style='margin-bottom:10px;'>🚨 <a href='{BLOG_BASE_URL}{h.get('file','')}' style='color:#333; text-decoration:none;'>{h.get('title')[:25]}...</a></li>" for h in history[:10]])
     
-    archive_name = f"post_{datetime.now().strftime('%Y%
+    # [수정 완료] 아래 라인이 에러가 났던 부분입니다. 확실히 고쳤습니다.
+    archive_name = f"post_{datetime.now().strftime('%Y%m%d_%H%M')}.html"
+    
+    history.insert(0, {"date": datetime.now().strftime("%Y-%m-%d"), "title": topic, "file": archive_name})
+    
+    with open(HISTORY_FILE, "w", encoding="utf-8") as f: json.dump(history, f, indent=4)
+    generate_seo_files(history)
+    
+    full_html = create_final_html(topic, img_url, html_body, sidebar_html)
+    with open("index.html", "w", encoding="utf-8") as f: f.write(full_html)
+    with open(archive_name, "w", encoding="utf-8") as f: f.write(full_html)
+
+if __name__ == "__main__": main()
