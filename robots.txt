@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://ramuh18.github.io/capital-insight/sitemap.xml
