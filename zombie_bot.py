@@ -6,7 +6,7 @@ sys.stdout = io.TextIOWrapper(sys.stdout.detach(), encoding='utf-8')
 sys.stderr = io.TextIOWrapper(sys.stderr.detach(), encoding='utf-8')
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# [Configuration]
+# [Configuration] 1호기 전용 설정
 BLOG_TITLE = "Capital Insight" 
 BLOG_BASE_URL = "https://ramuh18.github.io/capital-insight/" 
 EMPIRE_URL = "https://empire-analyst.digital/"
@@ -14,7 +14,7 @@ HISTORY_FILE = os.path.join(BASE_DIR, "history.json")
 AFFILIATE_LINK = "https://www.bybit.com/invite?ref=DOVWK5A" 
 AMAZON_LINK = "https://www.amazon.com/s?k=ledger+nano+x&tag=empireanalyst-20"
 
-# [주제 리스트 50개 유지]
+# [주제 리스트 50개: 1호기 테마(거시경제/위기)]
 BACKUP_TOPICS = [
     "The Collapse of Fiat Currency", "Why Your Savings Are Dying", "The Next Great Depression",
     "Hyperinflation Warning Signs", "Bank Bail-ins Explained", "The End of the Dollar",
@@ -35,7 +35,7 @@ BACKUP_TOPICS = [
     "Capital Controls Coming", "Exit Strategies for 2026"
 ]
 
-# [문단 블록 15개 유지 - 내용은 길고 풍부하게]
+# [문단 블록 15개: 금융/경제 테마]
 CONTENT_BLOCKS = [
     """
     ## The Silent Wealth Transfer
@@ -111,7 +111,7 @@ def get_live_trends():
     return [selected_topic]
 
 def generate_deep_report(topic):
-    # 인트로 (톤을 조금 차분하게 조정)
+    # 인트로
     intro = f"""
 # Strategic Analysis: {topic}
 
@@ -119,15 +119,14 @@ def generate_deep_report(topic):
 The global financial system is flashing warning signals regarding **{topic}**. While the masses are unaware, a systemic shift is underway that will redefine wealth distribution for the next decade. This report exposes the reality of {topic} and provides a roadmap for preservation.
 """
     
-    # [핵심 수정] 7개 블록을 뽑고, textwrap.dedent로 공백을 제거해서 '##' 문제를 해결
-    selected_blocks = random.sample(CONTENT_BLOCKS, 7)
+    # [핵심 수정] 1300자 내외 유지를 위해 블록 4개만 선택 + 공백 제거
+    selected_blocks = random.sample(CONTENT_BLOCKS, 4)
     body_content = ""
     for block in selected_blocks:
-        # textwrap.dedent가 앞쪽 공백을 없애서 마크다운이 코드로 인식되는 것을 막아줌
         clean_block = textwrap.dedent(block)
         body_content += clean_block.format(topic=topic, AMAZON_LINK=AMAZON_LINK) + "\n"
 
-    # 결론 (깔끔한 디자인으로 변경)
+    # 결론 (깔끔한 디자인)
     conclusion = f"""
 ## Final Verdict
 The timeline for **{topic}** is accelerating. You can choose to ignore the indicators, or you can take action today.
@@ -161,11 +160,12 @@ def create_final_html(topic, img_url, body_html, sidebar_html):
     <title>{topic} | {BLOG_TITLE}</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Merriweather:wght@700&display=swap" rel="stylesheet">
     <style>
+        /* 1호기 테마: 네이비 & 골드 */
         :root {{ --main-blue: #001f3f; --accent-gold: #c5a059; }}
         body {{ font-family: 'Inter', sans-serif; background: #f8f9fa; color: #333; line-height: 1.8; margin: 0; }}
         header {{ background: var(--main-blue); color: #fff; padding: 25px; text-align: center; border-bottom: 5px solid var(--accent-gold); }}
         .brand {{ font-family: 'Merriweather', serif; font-size: 2rem; letter-spacing: 1px; }}
-        /* [수정 완료] 너비를 표준적인 1100px로 줄여서 사진과 본문이 안정적으로 보이게 함 */
+        /* 표준 너비 1100px로 고정 */
         .container {{ max-width: 1100px; margin: 40px auto; display: grid; grid-template-columns: 1fr 320px; gap: 40px; padding: 0 20px; }}
         @media(max-width: 900px) {{ .container {{ grid-template-columns: 1fr; }} }}
         main {{ background: #fff; padding: 50px; border: 1px solid #ddd; box-shadow: 0 5px 15px rgba(0,0,0,0.05); border-radius: 4px; }}
@@ -227,7 +227,7 @@ def main():
     topic = get_live_trends()[0] 
     body_text = generate_deep_report(topic) 
     html_body = markdown.markdown(body_text)
-    # 이미지도 약간 차분하고 전문적인 느낌으로
+    # 이미지: 1호기 전용 (금융/데이터/차분함)
     img_url = f"https://image.pollinations.ai/prompt/{urllib.parse.quote('financial data visualization dark blue corporate style 8k')}?width=1200&height=600"
     
     history = []
