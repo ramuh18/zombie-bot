@@ -15,35 +15,51 @@ BLOG_BASE_URL = "https://ramuh18.github.io/capital-insight/"
 EMPIRE_URL = "https://empire-analyst.digital/"
 HISTORY_FILE = os.path.join(BASE_DIR, "history.json")
 
-# [🛡️ 비상용 원고 - 중복 방지를 위한 5종 리포트]
-FALLBACK_REPORTS = [
-    {"title": "Global Market Forecast: 2026 Trends", "content": "The global financial landscape is shifting. Interest rates remain a primary concern for institutional investors..."},
-    {"title": "Institutional Crypto Adoption Analysis", "content": "Institutional entry into the digital asset space has reached a tipping point. Cold storage is now mandatory..."},
-    {"title": "The Future of Reserve Currencies", "content": "Analyzing the structural decline of legacy fiat systems and the rise of decentralized alternatives..."},
-    {"title": "Supply Chain Resilience and Inflation", "content": "Inflationary pressures are being reshaped by geopolitical shifts. Logistics costs are the new indicator..."},
-    {"title": "Venture Capital Flows in the AI Era", "content": "Capital is concentrating in automated intelligence sectors. Understanding the new equity supercycle..."}
-]
+# [📊 실시간 트렌드 가져오기 함수]
+def get_google_trends():
+    try:
+        # 미국 경제 트렌드 RSS (API 없이 접근 가능)
+        url = "https://trends.google.com/trends/trendingsearches/daily/rss?geo=US"
+        resp = requests.get(url, timeout=20)
+        titles = re.findall(r"<title>(.*?)</title>", resp.text)
+        # 상위 1~2위는 무관할 수 있으므로 3~10위 사이에서 랜덤 선택
+        if len(titles) > 5:
+            return titles[3:10]
+        return ["Global Market Reset", "Interest Rate Shift", "Digital Asset Surge"]
+    except:
+        return ["Economic Supercycle", "Inflationary Pressure", "Market Liquidity"]
 
-def generate_report(topic):
-    # [1,500자 정량화 프롬프트] 너무 길지 않게, 하지만 전문적으로
-    prompt = f"""
-    Write a professional 1500-word financial analysis report on '{topic}'. 
+# [🏛️ 1,500자급 하이브리드 원고 생성기]
+def generate_trend_report(topic):
+    # API가 될 때와 안 될 때를 모두 대비한 템플릿
+    prompt = f"Write a 1500-word financial analysis about '{topic}'. Tone: Institutional. English Only. Markdown."
     
-    Guidelines:
-    1. Structure: Introduction, 3 Core Market Data points, and 1 Final Investment Strategy.
-    2. Tone: Trustworthy, Institutional, Logical.
-    3. Length: Strictly aim for around 1500 words. Do not exceed 2000 words.
-    4. Language: English Only. Use Markdown headers.
-    """
     try:
         url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
-        # Max output tokens를 1500~1800 단어 수준으로 조절
-        resp = requests.post(url, json={"contents": [{"parts": [{"text": prompt}]}], "generationConfig": {"temperature": 0.6, "maxOutputTokens": 1800}}, timeout=60)
-        return resp.json()['candidates'][0]['content']['parts'][0]['text'].strip()
+        resp = requests.post(url, json={"contents": [{"parts": [{"text": prompt}]}], "generationConfig": {"temperature": 0.5, "maxOutputTokens": 1800}}, timeout=40)
+        if resp.status_code == 200:
+            return resp.json()['candidates'][0]['content']['parts'][0]['text'].strip()
     except:
-        fallback = random.choice(FALLBACK_REPORTS)
-        log(f"⚠️ API Limit: Using Fallback '{fallback['title']}'")
-        return f"## {fallback['title']}\n\n{fallback['content']}"
+        pass
+
+    # [API 실패 시] 트렌드 키워드를 녹여낸 1,500자급 고정 리포트
+    return f"""
+# Strategic Analysis: The Impact of {topic} on 2026 Markets
+
+The recent surge in interest regarding **{topic}** indicates a significant shift in market sentiment. Our strategic intelligence unit has monitored these developments closely to provide a comprehensive outlook.
+
+## 1. Macro-Economic Context
+The current trend of {topic} is not isolated. It follows a period of intense institutional accumulation and geopolitical realignment. As global liquidity tightens, assets related to {topic} are showing unprecedented volatility.
+
+## 2. Institutional Response
+Major hedge funds and sovereign wealth funds are repositioning their portfolios to account for the {topic} phenomenon. This move suggests that the underlying factors driving this trend are systemic rather than transitory.
+
+## 3. Risk and Opportunity
+For the retail investor, {topic} represents both a critical risk and a sovereign opportunity. Failure to secure one's assets in hardware-based storage could lead to significant capital erasure.
+
+## 4. Final Conclusion
+Monitoring {topic} is essential for the 2026 fiscal cycle. We recommend immediate migration to cold storage and the adoption of automated wealth preservation strategies.
+    """
 
 def create_final_html(topic, img_url, body_html, sidebar_html):
     return f"""<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
@@ -51,55 +67,39 @@ def create_final_html(topic, img_url, body_html, sidebar_html):
     <title>{topic}</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        body {{ font-family: 'Inter', sans-serif; background: #f4f7f9; color: #333; line-height: 1.7; margin: 0; }}
-        header {{ background: #003366; color: white; padding: 25px; text-align: center; border-bottom: 4px solid #00509d; }}
+        body {{ font-family: 'Inter', sans-serif; background: #f4f7f9; color: #333; line-height: 1.8; margin: 0; }}
+        header {{ background: #003366; color: white; padding: 25px; text-align: center; position: sticky; top:0; z-index:100; }}
         .container {{ max-width: 1200px; margin: 40px auto; display: grid; grid-template-columns: 1fr 320px; gap: 40px; padding: 0 20px; }}
-        
-        /* [모바일 가독성 개선] 사이드바 겹침 방지 */
-        @media(max-width: 1000px) {{ 
-            .container {{ grid-template-columns: 1fr; }} 
-            .sidebar {{ position: static !important; border-top: 4px solid #003366; margin-top: 20px; }}
-        }}
-        
+        @media(max-width: 1000px) {{ .container {{ grid-template-columns: 1fr; }} .sidebar {{ position: static; }} }}
         main {{ background: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }}
-        h1 {{ color: #003366; font-size: 2.5rem; line-height: 1.2; }}
-        .content {{ font-size: 1.1rem; }}
+        h1 {{ color: #003366; font-size: 2.8rem; line-height: 1.1; }}
         img {{ width: 100%; height: 450px; object-fit: cover; border-radius: 8px; margin-bottom: 30px; }}
-        .sidebar {{ background: #fff; padding: 25px; border-radius: 8px; height: fit-content; border-top: 4px solid #003366; }}
-        .btn {{ display: block; padding: 15px; background: #003366; color: white; text-decoration: none; text-align: center; font-weight: bold; margin-top: 20px; }}
-        footer {{ text-align: center; padding: 60px; color: #888; font-size: 0.9rem; }}
+        .sidebar {{ background: #fff; padding: 25px; border-radius: 8px; border-top: 4px solid #003366; }}
+        .btn {{ display: block; padding: 15px; background: #003366; color: white; text-align: center; text-decoration: none; font-weight: bold; margin-top: 20px; }}
+        footer {{ text-align: center; padding: 60px; color: #888; }}
     </style></head>
     <body>
     <header><h1>{BLOG_TITLE}</h1></header>
     <div class="container">
-        <main>
-            <h1>{topic}</h1>
-            <img src="{img_url}">
-            <div class="content">{body_html}</div>
-        </main>
-        <aside class="sidebar">
-            <h3 style="margin-top:0;">LATEST INSIGHTS</h3>
-            <ul style="list-style:none; padding:0; line-height:2;">{sidebar_html}</ul>
-            <a href="{EMPIRE_URL}" class="btn">UNLOCK FULL DATA</a>
-        </aside>
+        <main><h1>{topic}</h1><img src="{img_url}"><div class="content">{body_html}</div></main>
+        <aside class="sidebar"><h3>TRENDING NOW</h3><ul style="list-style:none; padding:0;">{sidebar_html}</ul><a href="{EMPIRE_URL}" class="btn">ACCESS FULL INTEL</a></aside>
     </div>
-    <footer>&copy; 2026 Capital Insight | Strategic Intelligence Unit</footer></body></html>"""
+    <footer>&copy; 2026 {BLOG_TITLE}</footer></body></html>"""
 
 def main():
-    log("⚡ Unit 1 (Capital) Executing - 1500 Words Target...")
-    # 비상 원고 제목 리스트에서 하나를 골라 API 주제로 사용 (다양성 확보)
-    sample_topics = ["Global Liquidity Cycle", "Bond Market Volatility", "Emerging Market Reset", "Institutional Gold Demand"]
-    topic = random.choice(sample_topics)
+    log("⚡ Trend-Tracking Update Initiated...")
+    trends = get_google_trends()
+    topic = random.choice(trends)
     
-    full_text = generate_report(topic)
+    full_text = generate_trend_report(topic)
     html_body = markdown.markdown(full_text)
-    img_url = f"https://image.pollinations.ai/prompt/{urllib.parse.quote('professional financial workstation blue stock charts 8k')}"
+    img_url = f"https://image.pollinations.ai/prompt/{urllib.parse.quote('abstract financial data crystal red blue 8k')}"
     
     history = []
     if os.path.exists(HISTORY_FILE):
         with open(HISTORY_FILE, "r", encoding="utf-8") as f: history = json.load(f)
     
-    sidebar_html = "".join([f"<li><a href='{BLOG_BASE_URL}{h.get('file','')}' style='color:#003366; text-decoration:none;'>{h.get('title')[:25]}...</a></li>" for h in history[:10]])
+    sidebar_html = "".join([f"<li><a href='{BLOG_BASE_URL}{h.get('file','')}' style='color:#003366;'>{h.get('title')[:30]}...</a></li>" for h in history[:10]])
     archive_name = f"post_{datetime.now().strftime('%Y%m%d_%H%M')}.html"
     history.insert(0, {"date": datetime.now().strftime("%Y-%m-%d"), "title": topic, "file": archive_name})
     with open(HISTORY_FILE, "w", encoding="utf-8") as f: json.dump(history, f, indent=4)
@@ -107,6 +107,6 @@ def main():
     full_html = create_final_html(topic, img_url, html_body, sidebar_html)
     with open("index.html", "w", encoding="utf-8") as f: f.write(full_html)
     with open(archive_name, "w", encoding="utf-8") as f: f.write(full_html)
-    log("✅ Unit 1 1500-word Update Complete.")
+    log(f"✅ Trend Update Complete: {topic}")
 
 if __name__ == "__main__": main()
